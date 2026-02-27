@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct PathFindMobileApp: App {
+struct PathFind: App {
   @State private var authStore = AuthStore()
   @AppStorage("appearanceSetting") private var appearanceSetting: AppearanceSetting = .dark
 

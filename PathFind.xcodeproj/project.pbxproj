@@ -35,17 +35,17 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		C84E85AC2F50FEFD00291E3D /* PathFindMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PathFindMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C84E85AC2F50FEFD00291E3D /* PathFind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PathFind.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C84E85F02F511BF000291E3D /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		C84E85BB2F51014100291E3D /* Exceptions for "PathFindMobile" folder in "PathFindMobile" target */ = {
+		C84E85BB2F51014100291E3D /* Exceptions for "PathFind" folder in "PathFind" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = C84E85AB2F50FEFD00291E3D /* PathFindMobile */;
+			target = C84E85AB2F50FEFD00291E3D /* PathFind */;
 		};
 		C84E86142F511E4C00291E3D /* Exceptions for "ShareExtension" folder in "ShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -57,12 +57,12 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		C84E85AE2F50FEFD00291E3D /* PathFindMobile */ = {
+		C84E85AE2F50FEFD00291E3D /* PathFind */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				C84E85BB2F51014100291E3D /* Exceptions for "PathFindMobile" folder in "PathFindMobile" target */,
+				C84E85BB2F51014100291E3D /* Exceptions for "PathFind" folder in "PathFind" target */,
 			);
-			path = PathFindMobile;
+			path = PathFind;
 			sourceTree = "<group>";
 		};
 		C84E85F12F511BF000291E3D /* ShareExtension */ = {
@@ -96,7 +96,7 @@
 		C84E85A32F50FEFD00291E3D = {
 			isa = PBXGroup;
 			children = (
-				C84E85AE2F50FEFD00291E3D /* PathFindMobile */,
+				C84E85AE2F50FEFD00291E3D /* PathFind */,
 				C84E85F12F511BF000291E3D /* ShareExtension */,
 				C84E85AD2F50FEFD00291E3D /* Products */,
 			);
@@ -105,7 +105,7 @@
 		C84E85AD2F50FEFD00291E3D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C84E85AC2F50FEFD00291E3D /* PathFindMobile.app */,
+				C84E85AC2F50FEFD00291E3D /* PathFind.app */,
 				C84E85F02F511BF000291E3D /* ShareExtension.appex */,
 			);
 			name = Products;
@@ -114,9 +114,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		C84E85AB2F50FEFD00291E3D /* PathFindMobile */ = {
+		C84E85AB2F50FEFD00291E3D /* PathFind */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C84E85B72F50FF0000291E3D /* Build configuration list for PBXNativeTarget "PathFindMobile" */;
+			buildConfigurationList = C84E85B72F50FF0000291E3D /* Build configuration list for PBXNativeTarget "PathFind" */;
 			buildPhases = (
 				C84E85A82F50FEFD00291E3D /* Sources */,
 				C84E85A92F50FEFD00291E3D /* Frameworks */,
@@ -129,13 +129,13 @@
 				C84E85F92F511BF000291E3D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				C84E85AE2F50FEFD00291E3D /* PathFindMobile */,
+				C84E85AE2F50FEFD00291E3D /* PathFind */,
 			);
-			name = PathFindMobile;
+			name = PathFind;
 			packageProductDependencies = (
 			);
 			productName = PathFindMobile;
-			productReference = C84E85AC2F50FEFD00291E3D /* PathFindMobile.app */;
+			productReference = C84E85AC2F50FEFD00291E3D /* PathFind.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C84E85EF2F511BF000291E3D /* ShareExtension */ = {
@@ -179,7 +179,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C84E85A72F50FEFD00291E3D /* Build configuration list for PBXProject "PathFindMobile" */;
+			buildConfigurationList = C84E85A72F50FEFD00291E3D /* Build configuration list for PBXProject "PathFind" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -193,7 +193,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				C84E85AB2F50FEFD00291E3D /* PathFindMobile */,
+				C84E85AB2F50FEFD00291E3D /* PathFind */,
 				C84E85EF2F511BF000291E3D /* ShareExtension */,
 			);
 		};
@@ -369,13 +369,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = PathFindMobile/PathFindMobile.entitlements;
+				CODE_SIGN_ENTITLEMENTS = PathFind/PathFind.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3KBNA96A7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PathFindMobile/Info.plist;
+				INFOPLIST_FILE = PathFind/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -386,7 +386,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nxim.PathFindMobile;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nxim.PathFind;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -404,13 +404,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = PathFindMobile/PathFindMobile.entitlements;
+				CODE_SIGN_ENTITLEMENTS = PathFind/PathFind.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3KBNA96A7D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PathFindMobile/Info.plist;
+				INFOPLIST_FILE = PathFind/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -421,7 +421,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nxim.PathFindMobile;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nxim.PathFind;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -451,7 +451,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nxim.PathFindMobile.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nxim.PathFind.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -482,7 +482,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nxim.PathFindMobile.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nxim.PathFind.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -497,7 +497,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C84E85A72F50FEFD00291E3D /* Build configuration list for PBXProject "PathFindMobile" */ = {
+		C84E85A72F50FEFD00291E3D /* Build configuration list for PBXProject "PathFind" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C84E85B52F50FF0000291E3D /* Debug */,
@@ -506,7 +506,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C84E85B72F50FF0000291E3D /* Build configuration list for PBXNativeTarget "PathFindMobile" */ = {
+		C84E85B72F50FF0000291E3D /* Build configuration list for PBXNativeTarget "PathFind" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C84E85B82F50FF0000291E3D /* Debug */,
