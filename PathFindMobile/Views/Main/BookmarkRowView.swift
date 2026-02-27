@@ -5,42 +5,60 @@ struct BookmarkRowView: View {
   let serverURL: String
 
   var body: some View {
-    HStack(spacing: 14) {
-      // Thumbnail or Favicon
-      thumbnailView
-        .frame(width: 64, height: 64)
-        .cornerRadius(10)
-        .clipped()
-
-      // Content
-      VStack(alignment: .leading, spacing: 4) {
-        Text(bookmark.title ?? bookmark.url)
+    HStack(spacing: 12) {
+      // Left: text content
+      VStack(alignment: .leading, spacing: 5) {
+        Text(bookmark.title ?? bookmark.domain)
           .font(.subheadline)
-          .fontWeight(.medium)
+          .fontWeight(.semibold)
           .foregroundColor(.pfTextPrimary)
           .lineLimit(2)
+          .fixedSize(horizontal: false, vertical: true)
 
-        Text(bookmark.domain)
-          .font(.caption)
-          .foregroundColor(.pfTextSecondary)
-          .lineLimit(1)
+        HStack(spacing: 5) {
+          BookmarkFaviconView(rawValue: bookmark.favicon, serverURL: serverURL)
+            .frame(width: 14, height: 14)
+            .cornerRadius(3)
+            .clipped()
+
+          Text(bookmark.domain)
+            .font(.caption)
+            .foregroundColor(.pfTextSecondary)
+
+          Spacer()
+
+          if let date = bookmark.createdAt.parseDate {
+            Text(date.relativeFormatted)
+              .font(.system(size: 10))
+              .foregroundColor(.pfTextTertiary)
+          }
+        }
 
         // Tags
         if !bookmark.tags.isEmpty {
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
+              if bookmark.isReadLater {
+                Label("Later", systemImage: "bookmark.fill")
+                  .font(.system(size: 9, weight: .semibold))
+                  .foregroundColor(.pfWarning)
+                  .padding(.horizontal, 6)
+                  .padding(.vertical, 3)
+                  .background(Color.pfWarning.opacity(0.15))
+                  .cornerRadius(5)
+              }
               ForEach(bookmark.tags.prefix(3)) { tag in
                 Text("#\(tag.name)")
                   .font(.system(size: 10, weight: .medium))
                   .foregroundColor(Color.tagColor(for: tag.name))
                   .padding(.horizontal, 7)
                   .padding(.vertical, 3)
-                  .background(Color.tagColor(for: tag.name).opacity(0.15))
-                  .cornerRadius(6)
+                  .background(Color.tagColor(for: tag.name).opacity(0.14))
+                  .cornerRadius(5)
               }
               if bookmark.tags.count > 3 {
                 Text("+\(bookmark.tags.count - 3)")
-                  .font(.system(size: 10, weight: .medium))
+                  .font(.system(size: 10))
                   .foregroundColor(.pfTextTertiary)
               }
             }
@@ -48,77 +66,135 @@ struct BookmarkRowView: View {
         }
       }
 
-      Spacer(minLength: 0)
-
-      // Status indicators
-      VStack(spacing: 4) {
-        if bookmark.isReadLater {
-          Image(systemName: "bookmark.fill")
-            .font(.system(size: 10))
-            .foregroundColor(.pfWarning)
-        }
-        if let date = bookmark.createdAt.parseDate {
-          Text(date.relativeFormatted)
-            .font(.system(size: 9))
-            .foregroundColor(.pfTextTertiary)
-            .lineLimit(1)
-        }
-      }
+      // Right: thumbnail
+      BookmarkThumbnailView(
+        rawValue: bookmark.thumbnail, serverURL: serverURL, domain: bookmark.domain
+      )
+      .frame(width: 72, height: 72)
+      .cornerRadius(10)
+      .clipped()
     }
     .padding(.vertical, 8)
-    .padding(.horizontal, 4)
+    .padding(.horizontal, 2)
   }
+}
 
-  @ViewBuilder
-  private var thumbnailView: some View {
-    if let thumbnail = bookmark.thumbnail, !thumbnail.isEmpty {
-      let thumbnailURL = thumbnail.hasPrefix("http") ? thumbnail : "\(serverURL)\(thumbnail)"
-      AsyncImage(url: URL(string: thumbnailURL)) { phase in
-        switch phase {
-        case .success(let image):
-          image
-            .resizable()
-            .aspectRatio(contentMode: .fill)
-        case .failure:
-          faviconFallback
-        default:
-          Color.pfSurfaceLight
-        }
-      }
-    } else {
-      faviconFallback
-    }
-  }
+// MARK: - Thumbnail View
 
-  @ViewBuilder
-  private var faviconFallback: some View {
-    if let favicon = bookmark.favicon, !favicon.isEmpty {
-      let faviconURL = favicon.hasPrefix("http") ? favicon : "\(serverURL)\(favicon)"
-      AsyncImage(url: URL(string: faviconURL)) { phase in
-        switch phase {
-        case .success(let image):
-          ZStack {
-            Color.pfSurfaceLight
-            image
-              .resizable()
-              .aspectRatio(contentMode: .fit)
-              .frame(width: 28, height: 28)
+/// Handles all three thumbnail formats PathFind stores:
+/// 1. "data:image/...;base64,..." — inline base64 image
+/// 2. "/api/thumbnail?..." — generated SVG placeholder (relative URL)
+/// 3. "https://..." — absolute external URL
+struct BookmarkThumbnailView: View {
+  let rawValue: String?
+  let serverURL: String
+  let domain: String
+
+  var body: some View {
+    Group {
+      if let raw = rawValue, !raw.isEmpty {
+        if raw.hasPrefix("data:image") {
+          // Base64 inline image — decode directly
+          Base64ImageView(dataURI: raw)
+        } else if let url = resolvedURL(raw) {
+          // Remote URL (absolute or relative to server)
+          AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+              image.resizable().aspectRatio(contentMode: .fill)
+            default:
+              domainFallback
+            }
           }
-        default:
+        } else {
           domainFallback
         }
+      } else {
+        domainFallback
       }
-    } else {
-      domainFallback
     }
   }
 
   private var domainFallback: some View {
     ZStack {
+      LinearGradient(
+        colors: [Color.pfSurface, Color.pfSurfaceLight],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+      )
+      Text(String(domain.prefix(1)).uppercased())
+        .font(.system(size: 24, weight: .bold, design: .rounded))
+        .foregroundColor(.pfAccent.opacity(0.7))
+    }
+  }
+
+  private func resolvedURL(_ path: String) -> URL? {
+    if path.hasPrefix("http://") || path.hasPrefix("https://") {
+      return URL(string: path)
+    }
+    let base = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
+    return URL(string: base + path)
+  }
+}
+
+// MARK: - Favicon View
+
+struct BookmarkFaviconView: View {
+  let rawValue: String?
+  let serverURL: String
+
+  var body: some View {
+    if let raw = rawValue, !raw.isEmpty {
+      if raw.hasPrefix("data:image") {
+        Base64ImageView(dataURI: raw)
+      } else if let url = resolvedURL(raw) {
+        AsyncImage(url: url) { phase in
+          if case .success(let img) = phase {
+            img.resizable().aspectRatio(contentMode: .fit)
+          } else {
+            Color.clear
+          }
+        }
+      } else {
+        Color.clear
+      }
+    } else {
+      Color.clear
+    }
+  }
+
+  private func resolvedURL(_ path: String) -> URL? {
+    if path.hasPrefix("http://") || path.hasPrefix("https://") {
+      return URL(string: path)
+    }
+    let base = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
+    return URL(string: base + path)
+  }
+}
+
+// MARK: - Base64 Image Decoder
+
+/// Decodes a "data:image/...;base64,..." URI into a SwiftUI Image.
+struct Base64ImageView: View {
+  let dataURI: String
+
+  private var uiImage: UIImage? {
+    // Strip the "data:image/...;base64," prefix
+    guard let commaIndex = dataURI.firstIndex(of: ",") else { return nil }
+    let base64String = String(dataURI[dataURI.index(after: commaIndex)...])
+    guard let data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) else {
+      return nil
+    }
+    return UIImage(data: data)
+  }
+
+  var body: some View {
+    if let image = uiImage {
+      Image(uiImage: image)
+        .resizable()
+        .aspectRatio(contentMode: .fill)
+    } else {
       Color.pfSurfaceLight
-      Text(String(bookmark.domain.prefix(1)).uppercased())
-        .font(.system(size: 22, weight: .bold, design: .rounded))
-        .foregroundColor(.pfAccent)
     }
   }
 }

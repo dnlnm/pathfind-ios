@@ -62,6 +62,7 @@ final class BookmarkStore {
   var filter: BookmarkFilter = .all
   var sort: BookmarkSort = .newest
   var searchQuery: String = ""
+  var selectedTab: Int = 0
 
   // Filter by tag or collection
   var filterTag: String?
@@ -72,6 +73,7 @@ final class BookmarkStore {
   var tags: [Tag] = []
 
   private var service: BookmarkService?
+  private var loadNextPageTask: Task<Void, Never>?
 
   var hasMorePages: Bool {
     currentPage < totalPages
@@ -117,7 +119,12 @@ final class BookmarkStore {
       if reset {
         bookmarks = response.bookmarks
       } else {
-        bookmarks.append(contentsOf: response.bookmarks)
+        // Atomic replacement: build a new array and assign in one shot.
+        // Mutating via append() causes @Observable to fire per-element,
+        // which causes UICollectionView data source inconsistency crashes.
+        var merged = bookmarks
+        merged.append(contentsOf: response.bookmarks)
+        bookmarks = merged
       }
 
       totalPages = response.totalPages
@@ -133,10 +140,16 @@ final class BookmarkStore {
 
   @MainActor
   func loadNextPage() async {
+    // Cancel any in-flight page load to avoid double-fetches from
+    // multiple .onAppear calls on the last visible row.
     guard hasMorePages, !isLoadingMore else { return }
-    isLoadingMore = true
-    currentPage += 1
-    await loadBookmarks(reset: false)
+    loadNextPageTask?.cancel()
+    loadNextPageTask = Task { @MainActor in
+      isLoadingMore = true
+      currentPage += 1
+      await loadBookmarks(reset: false)
+    }
+    await loadNextPageTask?.value
   }
 
   @MainActor
@@ -221,6 +234,7 @@ final class BookmarkStore {
     filterCollectionId = nil
     filterCollectionName = nil
     filter = .all
+    selectedTab = 0
     await loadBookmarks(reset: true)
   }
 
@@ -230,6 +244,7 @@ final class BookmarkStore {
     filterCollectionName = name
     filterTag = nil
     filter = .all
+    selectedTab = 0
     await loadBookmarks(reset: true)
   }
 
@@ -238,6 +253,7 @@ final class BookmarkStore {
     filterTag = nil
     filterCollectionId = nil
     filterCollectionName = nil
+    selectedTab = 0
     await loadBookmarks(reset: true)
   }
 

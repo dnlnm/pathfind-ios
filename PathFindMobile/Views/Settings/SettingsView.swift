@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
   @Environment(AuthStore.self) private var authStore
+  @AppStorage("openInExternalBrowser") private var openInExternalBrowser = false
   @State private var showDisconnectConfirm = false
 
   var body: some View {
@@ -74,6 +75,30 @@ struct SettingsView: View {
               .foregroundColor(.pfDestructive)
             }
             .listRowBackground(Color.pfSurface)
+          }
+
+          // Browser
+          Section {
+            Toggle(isOn: $openInExternalBrowser) {
+              HStack(spacing: 12) {
+                Image(systemName: openInExternalBrowser ? "safari" : "safari.fill")
+                  .font(.system(size: 18))
+                  .foregroundColor(.pfAccent)
+                  .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text("Open in External Browser")
+                    .foregroundColor(.pfTextPrimary)
+                  Text(openInExternalBrowser ? "Uses Safari app" : "Uses in-app browser")
+                    .font(.caption)
+                    .foregroundColor(.pfTextTertiary)
+                }
+              }
+            }
+            .tint(.pfAccent)
+            .listRowBackground(Color.pfSurface)
+          } header: {
+            Text("Browser")
+              .foregroundColor(.pfTextTertiary)
           }
 
           // About

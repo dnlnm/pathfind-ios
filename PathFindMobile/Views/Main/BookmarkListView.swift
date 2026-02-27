@@ -4,6 +4,7 @@ import SwiftUI
 struct BookmarkListView: View {
   @Environment(AuthStore.self) private var authStore
   @Environment(BookmarkStore.self) private var store
+  @AppStorage("openInExternalBrowser") private var openInExternalBrowser = false
 
   @State private var showAddBookmark = false
   @State private var safariURL: URL?
@@ -100,6 +101,15 @@ struct BookmarkListView: View {
           .listRowSeparatorTint(.pfBorder)
           .contentShape(Rectangle())
           .onTapGesture {
+            guard let url = URL(string: bookmark.url) else { return }
+            if openInExternalBrowser {
+              UIApplication.shared.open(url)
+            } else {
+              safariURL = url
+            }
+          }
+          .onLongPressGesture {
+            // Long press → show detail sheet
             selectedBookmark = bookmark
           }
           .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -120,6 +130,13 @@ struct BookmarkListView: View {
             .tint(.pfWarning)
           }
           .swipeActions(edge: .leading) {
+            Button {
+              selectedBookmark = bookmark
+            } label: {
+              Label("Detail", systemImage: "info.circle")
+            }
+            .tint(.pfSurfaceLight)
+
             Button {
               Task { await store.toggleReadLater(bookmark: bookmark) }
             } label: {

@@ -3,10 +3,10 @@ import SwiftUI
 struct MainTabView: View {
   @Environment(AuthStore.self) private var authStore
   @State private var bookmarkStore = BookmarkStore()
-  @State private var selectedTab = 0
 
   var body: some View {
-    TabView(selection: $selectedTab) {
+    @Bindable var store = bookmarkStore
+    TabView(selection: $store.selectedTab) {
       BookmarkListView()
         .tabItem {
           Label("Bookmarks", systemImage: "bookmark.fill")
