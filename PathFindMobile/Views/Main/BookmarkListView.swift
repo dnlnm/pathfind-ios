@@ -47,6 +47,13 @@ struct BookmarkListView: View {
           HStack(spacing: 12) {
             sortMenu
             filterMenu
+            Button {
+              showAddBookmark = true
+            } label: {
+              Image(systemName: "plus")
+                .fontWeight(.semibold)
+                .foregroundColor(.pfAccent)
+            }
           }
         }
       }
@@ -170,9 +177,6 @@ struct BookmarkListView: View {
     .refreshable {
       await store.refresh()
     }
-    .overlay(alignment: .bottomTrailing) {
-      addButton
-    }
   }
 
   private var emptyState: some View {
@@ -205,27 +209,7 @@ struct BookmarkListView: View {
     }
   }
 
-  private var addButton: some View {
-    Button {
-      showAddBookmark = true
-    } label: {
-      Image(systemName: "plus")
-        .font(.system(size: 20, weight: .semibold))
-        .foregroundColor(.white)
-        .frame(width: 56, height: 56)
-        .background(
-          LinearGradient(
-            colors: [.pfAccent, .pfAccentLight],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-        .clipShape(Circle())
-        .shadow(color: .pfAccent.opacity(0.4), radius: 8, y: 4)
-    }
-    .padding(.trailing, 20)
-    .padding(.bottom, 20)
-  }
+
 
   // MARK: - Menus
 
