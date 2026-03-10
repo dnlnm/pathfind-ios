@@ -258,10 +258,10 @@ struct BookmarkCompactRowView: View {
 // MARK: - Thumbnail View
 
 /// Handles all thumbnail formats:
-/// 1. "data:image/...;base64,..." — inline base64 → rendered directly
+/// 1. "/api/thumbnails/xxx.webp"  — server-stored WebP → AsyncImage via resolved URL
 /// 2. "/api/thumbnail?..."        — server SVG iOS can't render → DynamicThumbnailView
 /// 3. "https://..."               — remote raster image → AsyncImage
-/// 4. nil / empty                 → DynamicThumbnailView
+/// 4. nil / empty                 — DynamicThumbnailView
 struct BookmarkThumbnailView: View {
   let rawValue: String?
   let serverURL: String
@@ -272,27 +272,24 @@ struct BookmarkThumbnailView: View {
   var body: some View {
     Group {
       if let raw = rawValue, !raw.isEmpty {
-        if raw.hasPrefix("data:image") {
-          // ✅ Base64 raster image — decode directly
-          Base64ImageView(dataURI: raw)
-        } else if raw.hasPrefix("/api/thumbnail") || raw.hasPrefix("api/thumbnail") {
+        if raw.hasPrefix("/api/thumbnail?") || raw.hasPrefix("api/thumbnail?") {
           // ⚡ Server SVG fallback — replace with native dynamic thumbnail
-          DynamicThumbnailView(title: title, domain: domain, favicon: favicon)
+          DynamicThumbnailView(title: title, domain: domain, favicon: favicon, serverURL: serverURL)
         } else if let url = resolvedURL(raw) {
-          // 🌐 Remote raster URL
+          // 🌐 Remote or local WebP image
           AsyncImage(url: url) { phase in
             switch phase {
             case .success(let image):
               image.resizable().aspectRatio(contentMode: .fill)
             default:
-              DynamicThumbnailView(title: title, domain: domain, favicon: favicon)
+              DynamicThumbnailView(title: title, domain: domain, favicon: favicon, serverURL: serverURL)
             }
           }
         } else {
-          DynamicThumbnailView(title: title, domain: domain, favicon: favicon)
+          DynamicThumbnailView(title: title, domain: domain, favicon: favicon, serverURL: serverURL)
         }
       } else {
-        DynamicThumbnailView(title: title, domain: domain, favicon: favicon)
+        DynamicThumbnailView(title: title, domain: domain, favicon: favicon, serverURL: serverURL)
       }
     }
   }
@@ -302,20 +299,22 @@ struct BookmarkThumbnailView: View {
       return URL(string: path)
     }
     let base = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-    return URL(string: base + path)
+    let slash = path.hasPrefix("/") ? "" : "/"
+    return URL(string: base + slash + path)
   }
 }
 
 // MARK: - Dynamic Thumbnail View
 
 /// Generates a branded thumbnail locally on iOS:
-/// - Extracts the dominant color from the base64 favicon via Core Image
+/// - Downloads the favicon and extracts the dominant color via Core Image
 /// - Falls back to a deterministic hue derived from the domain name
 /// - Renders a gradient card with decorative circles and the title text
 struct DynamicThumbnailView: View {
   let title: String?
   let domain: String
   let favicon: String?
+  let serverURL: String
 
   @State private var brandColor: Color = .clear
   @State private var colorReady = false
@@ -385,17 +384,28 @@ struct DynamicThumbnailView: View {
 
   private func loadBrandColor() async {
     let color = await Task.detached(priority: .userInitiated) { () -> Color in
-      if let raw = self.favicon,
-        raw.hasPrefix("data:image"),
-        let uiColor = Self.averageColor(fromBase64: raw)
-      {
-        return Color(uiColor)
+      // Try to download favicon and extract color
+      if let raw = self.favicon, !raw.isEmpty {
+        if let url = self.resolveFaviconURL(raw),
+           let uiColor = await Self.averageColor(fromURL: url)
+        {
+          return Color(uiColor)
+        }
       }
       return Self.deterministicColor(for: self.domain)
     }.value
 
     brandColor = color
     colorReady = true
+  }
+
+  private func resolveFaviconURL(_ raw: String) -> URL? {
+    if raw.hasPrefix("http://") || raw.hasPrefix("https://") {
+      return URL(string: raw)
+    }
+    let base = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
+    let slash = raw.hasPrefix("/") ? "" : "/"
+    return URL(string: base + slash + raw)
   }
 
   /// Deterministic hue from a simple domain hash — same domain always gets same color.
@@ -409,14 +419,15 @@ struct DynamicThumbnailView: View {
     Self.deterministicColor(for: domain)
   }
 
-  /// Extracts the average color from a base64-encoded image using Core Image.
-  private static func averageColor(fromBase64 raw: String) -> UIColor? {
-    guard let commaIdx = raw.firstIndex(of: ",") else { return nil }
-    let b64 = String(raw[raw.index(after: commaIdx)...])
-    guard let data = Data(base64Encoded: b64, options: .ignoreUnknownCharacters),
-      let uiImage = UIImage(data: data)
-    else { return nil }
-    return uiImage.pfAverageColor
+  /// Downloads an image from a URL and extracts the average color using Core Image.
+  private static func averageColor(fromURL url: URL) async -> UIColor? {
+    do {
+      let (data, _) = try await URLSession.shared.data(from: url)
+      guard let uiImage = UIImage(data: data) else { return nil }
+      return uiImage.pfAverageColor
+    } catch {
+      return nil
+    }
   }
 }
 
@@ -428,9 +439,7 @@ struct BookmarkFaviconView: View {
 
   var body: some View {
     if let raw = rawValue, !raw.isEmpty {
-      if raw.hasPrefix("data:image") {
-        Base64ImageView(dataURI: raw)
-      } else if let url = resolvedURL(raw) {
+      if let url = resolvedURL(raw) {
         AsyncImage(url: url) { phase in
           if case .success(let img) = phase {
             img.resizable().aspectRatio(contentMode: .fit)
@@ -451,33 +460,8 @@ struct BookmarkFaviconView: View {
       return URL(string: path)
     }
     let base = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-    return URL(string: base + path)
-  }
-}
-
-// MARK: - Base64 Image Decoder
-
-/// Decodes a "data:image/...;base64,..." URI into a SwiftUI Image.
-struct Base64ImageView: View {
-  let dataURI: String
-
-  private var uiImage: UIImage? {
-    guard let commaIndex = dataURI.firstIndex(of: ",") else { return nil }
-    let base64String = String(dataURI[dataURI.index(after: commaIndex)...])
-    guard let data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) else {
-      return nil
-    }
-    return UIImage(data: data)
-  }
-
-  var body: some View {
-    if let image = uiImage {
-      Image(uiImage: image)
-        .resizable()
-        .aspectRatio(contentMode: .fill)
-    } else {
-      Color.pfSurfaceLight
-    }
+    let slash = path.hasPrefix("/") ? "" : "/"
+    return URL(string: base + slash + path)
   }
 }
 
