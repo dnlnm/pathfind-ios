@@ -154,7 +154,13 @@ struct BookmarkListView: View {
   private var cardList: some View {
     List {
       ForEach(visibleBookmarks) { bookmark in
-        BookmarkRowView(bookmark: bookmark, serverURL: authStore.serverURL)
+        BookmarkRowView(
+          bookmark: bookmark, 
+          serverURL: authStore.serverURL,
+          showMenu: true,
+          onDetail: { selectedBookmark = bookmark },
+          onDelete: { bookmarkToDelete = bookmark }
+        )
           .listRowBackground(Color.clear)
           .listRowSeparator(.hidden)
           .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -165,7 +171,8 @@ struct BookmarkListView: View {
               safariURL: $safariURL,
               selectedBookmark: $selectedBookmark,
               bookmarkToDelete: $bookmarkToDelete,
-              store: store
+              store: store,
+              enableSwipeActions: false
             ))
       }
 
@@ -199,7 +206,8 @@ struct BookmarkListView: View {
               safariURL: $safariURL,
               selectedBookmark: $selectedBookmark,
               bookmarkToDelete: $bookmarkToDelete,
-              store: store
+              store: store,
+              enableSwipeActions: true
             ))
       }
 
@@ -289,60 +297,71 @@ struct BookmarkActionsModifier: ViewModifier {
   @Binding var selectedBookmark: Bookmark?
   @Binding var bookmarkToDelete: Bookmark?
   let store: BookmarkStore
+  var enableSwipeActions: Bool = true
 
+  @ViewBuilder
   func body(content: Content) -> some View {
-    content
-      .onTapGesture {
-        guard let url = URL(string: bookmark.url) else { return }
-        if openInExternalBrowser {
-          UIApplication.shared.open(url)
-        } else {
-          safariURL = url
-        }
-      }
-      .onLongPressGesture {
-        selectedBookmark = bookmark
-      }
-      .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-        Button(role: .destructive) {
-          bookmarkToDelete = bookmark  // ← bubble up; alert lives in parent
-        } label: {
-          Label("Delete", systemImage: "trash")
-        }
+    if enableSwipeActions {
+      content
+        .onTapGesture { handleTap() }
+        .onLongPressGesture { selectedBookmark = bookmark }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+          Button(role: .destructive) {
+            bookmarkToDelete = bookmark  // ← bubble up; alert lives in parent
+          } label: {
+            Label("Delete", systemImage: "trash")
+          }
 
-        Button {
-          Task { await store.toggleArchive(bookmark: bookmark) }
-        } label: {
-          Label(
-            bookmark.isArchived ? "Unarchive" : "Archive",
-            systemImage: bookmark.isArchived ? "tray.and.arrow.up" : "archivebox"
-          )
+          Button {
+            Task { await store.toggleArchive(bookmark: bookmark) }
+          } label: {
+            Label(
+              bookmark.isArchived ? "Unarchive" : "Archive",
+              systemImage: bookmark.isArchived ? "tray.and.arrow.up" : "archivebox"
+            )
+          }
+          .tint(.pfWarning)
         }
-        .tint(.pfWarning)
-      }
-      .swipeActions(edge: .leading) {
-        Button {
-          selectedBookmark = bookmark
-        } label: {
-          Label("Detail", systemImage: "info.circle")
-        }
-        .tint(.pfSurfaceLight)
+        .swipeActions(edge: .leading) {
+          Button {
+            selectedBookmark = bookmark
+          } label: {
+            Label("Detail", systemImage: "info.circle")
+          }
+          .tint(.pfSurfaceLight)
 
-        Button {
-          Task { await store.toggleReadLater(bookmark: bookmark) }
-        } label: {
-          Label(
-            bookmark.isReadLater ? "Remove" : "Read Later",
-            systemImage: bookmark.isReadLater ? "bookmark.slash" : "bookmark"
-          )
+          Button {
+            Task { await store.toggleReadLater(bookmark: bookmark) }
+          } label: {
+            Label(
+              bookmark.isReadLater ? "Remove" : "Read Later",
+              systemImage: bookmark.isReadLater ? "bookmark.slash" : "bookmark"
+            )
+          }
+          .tint(.pfAccent)
         }
-        .tint(.pfAccent)
-      }
-      .onAppear {
-        if bookmark.id == store.bookmarks.last?.id {
-          Task { await store.loadNextPage() }
-        }
-      }
+        .onAppear { handleAppear() }
+    } else {
+      content
+        .onTapGesture { handleTap() }
+        .onLongPressGesture { selectedBookmark = bookmark }
+        .onAppear { handleAppear() }
+    }
+  }
+
+  private func handleTap() {
+    guard let url = URL(string: bookmark.url) else { return }
+    if openInExternalBrowser {
+      UIApplication.shared.open(url)
+    } else {
+      safariURL = url
+    }
+  }
+
+  private func handleAppear() {
+    if bookmark.id == store.bookmarks.last?.id {
+      Task { await store.loadNextPage() }
+    }
   }
 }
 

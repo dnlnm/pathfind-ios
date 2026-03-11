@@ -4,6 +4,11 @@ struct BookmarkRowView: View {
   let bookmark: Bookmark
   let serverURL: String
 
+  var showMenu: Bool = false
+  var onDetail: (() -> Void)? = nil
+  var onDelete: (() -> Void)? = nil
+
+  @Environment(BookmarkStore.self) private var store
   @AppStorage("nsfwDisplayMode") private var nsfwDisplayMode: NsfwDisplayMode = .blur
   @State private var isRevealed = false
 
@@ -81,6 +86,46 @@ struct BookmarkRowView: View {
             Text(date.relativeFormatted)
               .font(.system(size: 10))
               .foregroundColor(.pfTextTertiary)
+          }
+
+          if showMenu {
+            Menu {
+              Button {
+                onDetail?()
+              } label: {
+                Label("Detail", systemImage: "info.circle")
+              }
+
+              Button {
+                Task { await store.toggleReadLater(bookmark: bookmark) }
+              } label: {
+                Label(
+                  bookmark.isReadLater ? "Remove" : "Read Later",
+                  systemImage: bookmark.isReadLater ? "bookmark.slash" : "bookmark"
+                )
+              }
+
+              Button {
+                Task { await store.toggleArchive(bookmark: bookmark) }
+              } label: {
+                Label(
+                  bookmark.isArchived ? "Unarchive" : "Archive",
+                  systemImage: bookmark.isArchived ? "tray.and.arrow.up" : "archivebox"
+                )
+              }
+
+              Button(role: .destructive) {
+                onDelete?()
+              } label: {
+                Label("Delete", systemImage: "trash")
+              }
+            } label: {
+              Image(systemName: "ellipsis")
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+                .foregroundColor(.pfTextTertiary)
+            }
           }
         }
 
@@ -282,7 +327,8 @@ struct BookmarkThumbnailView: View {
             case .success(let image):
               image.resizable().aspectRatio(contentMode: .fill)
             default:
-              DynamicThumbnailView(title: title, domain: domain, favicon: favicon, serverURL: serverURL)
+              DynamicThumbnailView(
+                title: title, domain: domain, favicon: favicon, serverURL: serverURL)
             }
           }
         } else {
@@ -387,7 +433,7 @@ struct DynamicThumbnailView: View {
       // Try to download favicon and extract color
       if let raw = self.favicon, !raw.isEmpty {
         if let url = self.resolveFaviconURL(raw),
-           let uiColor = await Self.averageColor(fromURL: url)
+          let uiColor = await Self.averageColor(fromURL: url)
         {
           return Color(uiColor)
         }
