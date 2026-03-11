@@ -26,6 +26,7 @@ struct PathFind: App {
         }
       }
       .environment(authStore)
+      .environment(NotificationService.shared)
       .preferredColorScheme(appearanceSetting.colorScheme)
     }
   }

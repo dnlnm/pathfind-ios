@@ -11,6 +11,10 @@ struct BookmarkDetailView: View {
   @State private var showSafari = false
   @State private var showEditSheet = false
   @State private var showDeleteConfirm = false
+  @State private var showReminderSheet = false
+  @State private var customReminderDate = Date()
+
+  @Environment(NotificationService.self) private var notificationService
 
   var body: some View {
     NavigationStack {
@@ -212,6 +216,37 @@ struct BookmarkDetailView: View {
                   .cornerRadius(12)
               }
 
+              if let reminderDate = notificationService.pendingReminders[bookmark.id] {
+                Button {
+                  Task { await notificationService.cancelReminder(for: bookmark.id) }
+                } label: {
+                  Label(
+                    "Cancel Reminder (\(reminderDate.formatted(date: .abbreviated, time: .shortened)))",
+                    systemImage: "bell.slash"
+                  )
+                  .font(.subheadline)
+                  .fontWeight(.medium)
+                  .frame(maxWidth: .infinity)
+                  .padding(.vertical, 12)
+                  .background(Color.pfSurface)
+                  .foregroundColor(.pfWarning)
+                  .cornerRadius(10)
+                }
+              } else {
+                Button {
+                  showReminderSheet = true
+                } label: {
+                  Label("Remind Me", systemImage: "bell")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.pfSurface)
+                    .foregroundColor(.pfTextPrimary)
+                    .cornerRadius(10)
+                }
+              }
+
               HStack(spacing: 12) {
                 Button {
                   Task { await store.toggleArchive(bookmark: bookmark) }
@@ -301,12 +336,75 @@ struct BookmarkDetailView: View {
         Button("Cancel", role: .cancel) {}
         Button("Delete", role: .destructive) {
           Task {
+            await notificationService.cancelReminder(for: bookmark.id)
             await store.deleteBookmark(id: bookmark.id)
             dismiss()
           }
         }
       } message: {
         Text("This action cannot be undone.")
+      }
+      .sheet(isPresented: $showReminderSheet) {
+        NavigationStack {
+          Form {
+            Section {
+              Button("In 1 Hour") { scheduleReminder(addingHours: 1) }
+              Button("Tomorrow Morning (8:00 AM)") { scheduleTomorrowMorning() }
+            }
+
+            Section("Custom Time") {
+              DatePicker(
+                "Select Time", selection: $customReminderDate, in: Date()...,
+                displayedComponents: [.date, .hourAndMinute]
+              )
+              .datePickerStyle(.graphical)
+
+              Button("Schedule") {
+                Task {
+                  await notificationService.scheduleReminder(
+                    for: bookmark.id, url: bookmark.url, title: bookmark.title ?? "Untitled",
+                    at: customReminderDate)
+                  showReminderSheet = false
+                }
+              }
+              .frame(maxWidth: .infinity, alignment: .center)
+              .foregroundColor(.pfAccent)
+              .fontWeight(.bold)
+            }
+          }
+          .navigationTitle("Remind Me")
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+              Button("Cancel") { showReminderSheet = false }
+            }
+          }
+        }
+        .presentationDetents([.medium, .large])
+      }
+    }
+  }
+
+  private func scheduleReminder(addingHours hours: Int) {
+    if let date = Calendar.current.date(byAdding: .hour, value: hours, to: Date()) {
+      Task {
+        await notificationService.scheduleReminder(
+          for: bookmark.id, url: bookmark.url, title: bookmark.title ?? "Untitled", at: date)
+        showReminderSheet = false
+      }
+    }
+  }
+
+  private func scheduleTomorrowMorning() {
+    var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+    components.day! += 1
+    components.hour = 8
+    components.minute = 0
+    if let date = Calendar.current.date(from: components) {
+      Task {
+        await notificationService.scheduleReminder(
+          for: bookmark.id, url: bookmark.url, title: bookmark.title ?? "Untitled", at: date)
+        showReminderSheet = false
       }
     }
   }
