@@ -138,6 +138,8 @@ final class BookmarkStore {
       total = response.total
       isLoading = false
       isLoadingMore = false
+
+      SpotlightService.shared.index(bookmarks: response.bookmarks)
     } catch {
       self.error = error.localizedDescription
       isLoading = false
@@ -226,6 +228,9 @@ final class BookmarkStore {
     guard let service else { return }
 
     do {
+      if let bookmark = bookmarks.first(where: { $0.id == id }) {
+        SpotlightService.shared.deindex(bookmark: bookmark)
+      }
       try await service.deleteBookmark(id: id)
       bookmarks.removeAll { $0.id == id }
       total -= 1

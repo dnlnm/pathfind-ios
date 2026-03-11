@@ -2,7 +2,9 @@ import SwiftUI
 
 struct SettingsView: View {
   @Environment(AuthStore.self) private var authStore
+  @Environment(BookmarkStore.self) private var bookmarkStore
   @AppStorage("openInExternalBrowser") private var openInExternalBrowser = false
+  @AppStorage("enableSpotlightSearch") private var enableSpotlightSearch = true
   @AppStorage("appearanceSetting") private var appearanceSetting: AppearanceSetting = .dark
   @AppStorage("nsfwDisplayMode") private var nsfwDisplayMode: NsfwDisplayMode = .blur
   @State private var showDisconnectConfirm = false
@@ -147,6 +149,37 @@ struct SettingsView: View {
               .foregroundColor(.pfTextTertiary)
           }
 
+          // Search
+          Section {
+            Toggle(isOn: $enableSpotlightSearch) {
+              HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                  .font(.system(size: 18))
+                  .foregroundColor(.pfAccent)
+                  .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text("Spotlight Search")
+                    .foregroundColor(.pfTextPrimary)
+                  Text(enableSpotlightSearch ? "Indexes bookmarks for iOS Spotlight" : "Spotlight indexing disabled")
+                    .font(.caption)
+                    .foregroundColor(.pfTextTertiary)
+                }
+              }
+            }
+            .tint(.pfAccent)
+            .listRowBackground(Color.pfSurface)
+            .onChange(of: enableSpotlightSearch) { _, newValue in
+              if newValue {
+                SpotlightService.shared.index(bookmarks: bookmarkStore.bookmarks)
+              } else {
+                SpotlightService.shared.deindexAll()
+              }
+            }
+          } header: {
+            Text("Search")
+              .foregroundColor(.pfTextTertiary)
+          }
+
           // Browser
           Section {
             Toggle(isOn: $openInExternalBrowser) {
@@ -216,4 +249,5 @@ struct SettingsView: View {
 #Preview {
   SettingsView()
     .environment(AuthStore())
+    .environment(BookmarkStore())
 }

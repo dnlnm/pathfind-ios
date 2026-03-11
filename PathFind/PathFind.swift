@@ -1,3 +1,4 @@
+import CoreSpotlight
 import SwiftUI
 
 @main
@@ -10,6 +11,16 @@ struct PathFind: App {
       Group {
         if authStore.isAuthenticated {
           MainTabView()
+            .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+              if let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier]
+                as? String
+              {
+                let parts = identifier.components(separatedBy: "||")
+                if parts.count == 2, let url = URL(string: parts[1]) {
+                  UIApplication.shared.open(url)
+                }
+              }
+            }
         } else {
           SetupView()
         }
